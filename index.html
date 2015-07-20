@@ -1,0 +1,555 @@
+<html>
+<head>
+<title>Axiality 0.1</title>
+
+<script src="jquery-2.1.4.min.js" > </script>
+
+<script>
+      //var canvas = {};
+      //var context = {};    
+      var centerX;
+      var centerY;
+  
+$(document).ready(function() {
+    
+    canvasApp();
+    
+    $(".tabs-menu a").click(function(event) {
+        event.preventDefault();
+        $(this).parent().addClass("current");
+        $(this).parent().siblings().removeClass("current");
+        var tab = $(this).attr("href");
+        $(".tab-content").not(tab).css("display", "none");
+        $(tab).fadeIn();
+    });
+    
+    
+       
+    $("#light #closeText").on("click", function() {
+    
+    	$("#light").hide();
+    	$("#fade").hide(); 
+    	
+    	$("#tabs-container").hide();
+     
+	});
+});
+
+
+		
+function makeDot(centerX, centerY, radius) {
+
+//extra
+
+		//canvas = document.getElementById('myCanvas');
+		//context = canvas.getContext('2d'); 
+		  
+      	centerX = canvas.width / 2;
+    	centerY = canvas.height / 2;     
+     
+
+    	
+    	makeLine(centerX, centerY, 450, 50);    
+		makeDot(centerX, centerY, 20);
+		makeDot(450, 50, 10);
+		
+		//done
+		
+		
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI, false);
+      ctx.fillStyle = 'green';
+      ctx.fill();
+      ctx.lineWidth = 5;
+      ctx.strokeStyle = '#003300';
+      ctx.stroke();  
+}
+
+
+function makeLine(startX, startY, endX, endY) {
+
+      ctx.beginPath();
+      ctx.moveTo(startX, startY);
+      ctx.lineTo(endX, endY);
+      ctx.stroke();
+      
+}
+
+
+function canvasApp() {
+	//if (!canvasSupport()) {
+	//	return;
+	//}
+	
+	var theCanvas = document.getElementById("canvasOne");
+	var context = theCanvas.getContext("2d");
+	
+ 
+	
+	init();
+	
+	var numShapes;
+	var shapes;
+	var dragIndex;
+	var dragging;
+	var mouseX;
+	var mouseY;
+	var dragHoldX;
+	var dragHoldY;
+	
+	
+	
+	
+	
+	function init() {
+	
+	theCanvas.width = document.body.clientWidth;
+    theCanvas.height = document.body.clientHeight;
+	
+		numShapes = 0;
+		shapes = [];
+		
+		makeShapes();
+		
+		drawScreen();
+		
+		theCanvas.addEventListener("mousedown", mouseDownListener, false);
+	}
+	
+	function makeShapes() {
+		var i;
+		var tempX;
+		var tempY;
+		var tempRad;
+		var tempR;
+		var tempG;
+		var tempB;
+		var tempColor;
+		var centerX = theCanvas.width / 2;
+    	var centerY = theCanvas.height / 2;   
+		/*
+		for (i=0; i < numShapes; i++) {
+			tempRad = 10 + Math.floor(Math.random()*25);
+			tempX = Math.random()*(theCanvas.width - tempRad);
+			tempY = Math.random()*(theCanvas.height - tempRad);
+			tempR = Math.floor(Math.random()*255);
+			tempG = Math.floor(Math.random()*255);
+			tempB = Math.floor(Math.random()*255);
+			tempColor = "rgb(" + tempR + "," + tempG + "," + tempB +")";
+			tempShape = {x:tempX, y:tempY, rad:tempRad, color:tempColor};
+			shapes.push(tempShape); 
+		}
+		*/
+		
+		shapes.length = 0
+		
+
+    	  
+		tempR = 0;
+		tempG = 200;
+		tempB = 50;		
+		tempColor = "rgb(" + tempR + "," + tempG + "," + tempB +")";
+		
+		tempShape = {lbl:"B&T", ttl:"Being and Time", txt:"A fine read", t:1.0, pole:true, x:centerX, y:centerY, rad:50, color:tempColor};
+		shapes.push(tempShape); 	
+
+		nextXY = lerp([centerX,centerY],[450,50],0.3)		
+		tempShape = {lbl:"DE", ttl:"Dynamic Energy", txt:"A fine read",  t:0.7, pole:false, x:nextXY[0], y:nextXY[1], rad:30, color:tempColor};
+		shapes.push(tempShape); 
+		
+		nextXY = lerp([centerX,centerY],[450,50],0.7)		
+		tempShape = {lbl:"Y", ttl:"Yossarian", txt:"A fine read",  t:0.3, pole:false, x:nextXY[0], y:nextXY[1], rad:20, color:tempColor};
+		shapes.push(tempShape); 
+
+		tempShape = {lbl:"TOE", ttl:"Theory of Everything", txt:"A fine read",  t:0, pole:true, x:450, y:50, rad:10, color:tempColor};
+		shapes.push(tempShape); 
+		
+		numShapes = shapes.length;	
+		
+	}
+	
+	theCanvas.addEventListener("dblclick", dblClickListener, false);
+	//theCanvas.addEventListener("mousemove", hoverListener, false);
+	
+	function getMousePos(evt) {
+        var rect = theCanvas.getBoundingClientRect();
+        return {
+          x: evt.clientX - rect.left,
+          y: evt.clientY - rect.top
+        };
+    }
+    
+    
+      
+	function dblClickListener(e) {
+
+		var thisShape = findTarget(e);
+		
+		if(thisShape) {
+			$("#light").show();
+			$("#fade").show(); 
+			$('#lightText').html(thisShape.ttl + "<br/>" + thisShape.txt);	
+		} else {
+
+			$("#light").show();
+			$("#fade").show(); 
+			
+			$("#tabs-container").show();
+	
+		}
+
+	}
+	
+
+	function hoverListener(e) {
+		
+		var thisShape = findTarget(e);
+
+		if(thisShape) {	
+			
+			context.fillText(thisShape.ttl, thisShape.x, thisShape.y);
+			
+			setTimeout(drawShapes, 5000);
+		}	
+	
+	}
+	
+	function findTarget(e) {
+	
+		var mousePos = getMousePos(e);			
+		for(var i = 0; i < shapes.length; i++) {
+			if(distance(shapes[i].x, shapes[i].y, mousePos.x, mousePos.y) <= 20) {
+				
+				return shapes[i];
+			
+			}
+		}		
+	
+	}
+	
+	function lerp(a, b, t) {
+		//check consistency
+		var len = a.length;
+		if(b.length != len) return;
+
+		var x = [];
+		for(var i = 0; i < len; i++) {
+			x.push(a[i] + t * (b[i] - a[i]));
+		}
+		return x;
+	}
+	
+	function distance(x1, y1, x2, y2) {
+	
+		return Math.sqrt( (x2-=x1)*x2 + (y2-=y1)*y2 );
+	}
+	
+	
+
+	
+	function mouseDownListener(evt) {
+		var i;
+		//We are going to pay attention to the layering order of the objects so that if a mouse down occurs over more than object,
+		//only the topmost one will be dragged.
+		var highestIndex = -1;
+		
+		//getting mouse position correctly, being mindful of resizing that may have occured in the browser:
+		var bRect = theCanvas.getBoundingClientRect();
+		mouseX = (evt.clientX - bRect.left)*(theCanvas.width/bRect.width);
+		mouseY = (evt.clientY - bRect.top)*(theCanvas.height/bRect.height);
+				
+		//find which shape was clicked
+		for (i=0; i < numShapes; i++) {
+			if	(hitTest(shapes[i], mouseX, mouseY)) {
+				dragging = true;
+				if (i > highestIndex) {
+					//We will pay attention to the point on the object where the mouse is "holding" the object:
+					dragHoldX = mouseX - shapes[i].x;
+					dragHoldY = mouseY - shapes[i].y;
+					highestIndex = i;
+					dragIndex = i;
+				}
+			}
+		}
+		
+		if (dragging) {
+			window.addEventListener("mousemove", mouseMoveListener, false);
+		}
+		theCanvas.removeEventListener("mousedown", mouseDownListener, false);
+		window.addEventListener("mouseup", mouseUpListener, false);
+		
+		//code below prevents the mouse down from having an effect on the main browser window:
+		if (evt.preventDefault) {
+			evt.preventDefault();
+		} //standard
+		else if (evt.returnValue) {
+			evt.returnValue = false;
+		} //older IE
+		return false;
+	}
+	
+	function mouseUpListener(evt) {
+		theCanvas.addEventListener("mousedown", mouseDownListener, false);
+		window.removeEventListener("mouseup", mouseUpListener, false);
+		if (dragging) {
+			dragging = false;
+			window.removeEventListener("mousemove", mouseMoveListener, false);
+			
+
+			drawShapes();
+		}
+	}
+
+	function mouseMoveListener(evt) {
+	
+		if(shapes[dragIndex].pole) {
+			var posX;
+			var posY;
+			var shapeRad = shapes[dragIndex].rad;
+			var minX = shapeRad;
+			var maxX = theCanvas.width - shapeRad;
+			var minY = shapeRad;
+			var maxY = theCanvas.height - shapeRad;
+			//getting mouse position correctly 
+			var bRect = theCanvas.getBoundingClientRect();
+			mouseX = (evt.clientX - bRect.left)*(theCanvas.width/bRect.width);
+			mouseY = (evt.clientY - bRect.top)*(theCanvas.height/bRect.height);
+		
+			//clamp x and y positions to prevent object from dragging outside of canvas
+			posX = mouseX - dragHoldX;
+			posX = (posX < minX) ? minX : ((posX > maxX) ? maxX : posX);
+			posY = mouseY - dragHoldY;
+			posY = (posY < minY) ? minY : ((posY > maxY) ? maxY : posY);
+		
+			shapes[dragIndex].x = posX;
+			shapes[dragIndex].y = posY;
+
+			var centerX = theCanvas.width / 2;
+    		var centerY = theCanvas.height / 2;
+    		var maxRadius = centerX;
+			
+			var lastIdx = shapes.length - 1;
+			for(var i = 0; i < shapes.length; i++) {
+
+				if(shapes[i].pole == false) {
+				
+					var nextXY = lerp([shapes[0].x,shapes[0].y], [shapes[lastIdx].x,shapes[lastIdx].y], shapes[i].t);
+					shapes[i].x = nextXY[0];
+					shapes[i].y = nextXY[1];
+					
+				}
+				
+				var curDiff = distance(shapes[i].x , shapes[i].y, centerX, centerY);
+				var curRadius = parseInt((1 - (curDiff / maxRadius)) * 50);
+				if (curRadius < 5) {
+					curRadius = 5;
+				}
+				shapes[i].rad = curRadius;
+				
+//console.log("yo", i, maxRadius, curDiff, curWeight);	
+			
+				
+			}			
+	
+		
+			drawScreen();
+		}
+	}
+	
+	function hitTest(shape,mx,my) {
+		
+		var dx;
+		var dy;
+		dx = mx - shape.x;
+		dy = my - shape.y;
+		
+		//a "hit" will be registered if the distance away from the center is less than the radius of the circular object		
+		return (dx*dx + dy*dy < shape.rad*shape.rad);
+	}
+	
+	function drawShapes() {
+		var i;
+
+		
+		for (i=0; i < numShapes; i++) {
+			context.fillStyle = shapes[i].color;
+			context.beginPath();
+			context.arc(shapes[i].x, shapes[i].y, shapes[i].rad, 0, 2*Math.PI, false);
+
+			context.closePath();
+			
+			context.fill();
+			
+			context.fillStyle = "rgb(255,255,255)";
+			context.font = '20pt Arial';
+			var offset = parseInt(shapes[i].rad / 2);
+			context.fillText(shapes[i].lbl, shapes[i].x - offset, shapes[i].y + offset);
+		}
+		
+	}
+	
+	function drawScreen() {
+
+		context.fillStyle = "#000000";
+		context.fillRect(0,0,theCanvas.width,theCanvas.height);
+		
+		drawShapes();		
+	}
+	
+}
+
+
+
+
+</script>
+
+
+<style>
+
+body {
+padding: 20px;
+font-family: Arial, Helvetica, sans-serif;
+line-height: 1.5;
+font-size: 14px;        
+}
+
+.tabs-menu {
+    height: 30px;
+    float: left;
+    clear: both;
+}
+
+.tabs-menu li {
+    height: 30px;
+    line-height: 30px;
+    float: left;
+    margin-right: 10px;
+    background-color: #ccc;
+    border-top: 1px solid #d4d4d1;
+    border-right: 1px solid #d4d4d1;
+    border-left: 1px solid #d4d4d1;
+}
+
+.tabs-menu li.current {
+    position: relative;
+    background-color: #fff;
+    border-bottom: 1px solid #fff;
+    z-index: 5;
+}
+
+.tabs-menu li a {
+    padding: 10px;
+    text-transform: uppercase;
+    color: #fff;
+    text-decoration: none; 
+}
+
+.tabs-menu .current a {
+    color: #2e7da3;
+}
+
+.tab {
+    border: 1px solid #d4d4d1;
+    background-color: #fff;
+    float: left;
+    margin-bottom: 20px;
+    width: auto;
+}
+
+.tab-content {
+    width: 650px;
+    padding: 20px;
+    display: none;
+}
+
+#tab-1 {
+ display: block;   
+}
+
+ul {
+    list-style-type: none;
+}
+
+   .black_overlay{
+        display: none;
+        position: absolute;
+        top: 0%;
+        left: 0%;
+        width: 100%;
+        height: 100%;
+        background-color: black;
+        z-index:1001;
+        -moz-opacity: 0.8;
+        opacity:.80;
+        filter: alpha(opacity=80);
+    }
+    .white_content {
+        display: none;
+        position: absolute;
+        top: 25%;
+        left: 25%;
+        width: 50%;
+        height: 50%;
+        padding: 16px;
+        border: 16px solid orange;
+        background-color: white;
+        z-index:1002;
+        overflow: auto;
+    }
+    #lightText {   
+
+    }
+    #closeText{
+    	position: float-right;
+    }
+    #tabs-container {
+    	display: none;
+    }
+</style>
+
+<body>
+
+<canvas id="canvasOne"></canvas>
+
+<div id="light" class="white_content">
+
+	<input id="closeText" type="button" value="Close" ></input>
+	<div id="lightText"><div>
+
+
+	
+<div id="tabs-container">
+	<ul class="tabs-menu">
+		<li class="current"><a href="#tab-1">Key</a></li>
+		<li><a href="#tab-2">Include</a></li>
+		<li><a href="#tab-3">Axiality</a></li>
+		<li><a href="#tab-4">Save and/or Add</a></li>
+	</ul>
+	<div class="tab">
+		<div id="tab-1" class="tab-content">
+			<p>Key     </p>
+		</div>
+		<div id="tab-2" class="tab-content">
+			<p>Include      </p>
+	
+		</div>
+		<div id="tab-3" class="tab-content">
+			<p>Axiality      </p>
+		</div>
+		<div id="tab-4" class="tab-content">
+			<p>Save or Add    </p>
+		</div>
+	</div>   
+</div>
+
+</div>
+<div id="fade" class="black_overlay"></div>
+
+
+
+
+
+
+
+</body>
+
